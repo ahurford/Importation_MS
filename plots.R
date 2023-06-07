@@ -137,14 +137,13 @@ p4 <- ggplot() +
                           axis.title = element_text(size=rel(1.1)),
                           axis.text.y = element_text(size=rel(1.2)))
 
-#, alpha=.8 geom_bar is not working with .eps format
-p2+p1 + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Imp22.png", width = 15, , height = 6, dpi =500)
-#ggsave(file = "Figure/BMB/Imp22.eps", width = 15, , height = 10, dpi = 1200)
 
-# for the paper
+
+p2+p1 + plot_annotation(tag_levels = 'A')
+ggsave("Figure/figureApp1.png", width = 15, , height = 6, dpi =500)
+
+
 (m7+m9)/(p4+p3) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Figure6.png", width = 15, , height = 10, dpi =500)
-#ggsave(file = "Figure/BMB/Figure6.eps", width = 15, , height = 10, dpi = 1200)
+ggsave("Figure/Figure4.png", width = 15, , height = 10, dpi =500)
 
 

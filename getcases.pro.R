@@ -1,7 +1,3 @@
-# library(tidyverse)
-# library(dplyr)
-# library(tidyr)
-# library(reshape2)
 source("preliminaries.R")
 
 #USA cases (CSSE at Johns Hopkins University is releasing cumulative counts)

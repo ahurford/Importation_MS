@@ -11,11 +11,12 @@ library(tidyverse)
 library(lubridate)
 library("readxl")
 library(reshape2)
-library(patchwork)  #combine separate ggplots
+library(patchwork) #combine separate ggplots
 library(scales)
-library(zoo)
+library(zoo)       #rolling percentage
 library(viridis)
 library(RColorBrewer)
+library(mapcan)   #Canada map
 
 
 ## Color palette
@@ -53,9 +54,14 @@ IATA.CA <- select(IATA.CA, c("date", "YT","NU","ON","QC",
                       "MB","NB","AB","NS","BC","SK" ,"PE","NT"))
 IATA.CA <- dplyr::mutate(IATA.CA, "ALLCANotNL" = rowSums((IATA.CA[,2:13]), na.rm = TRUE))
 
+## separate NL and SPM from Canadian
+#IATA["ALLNL"] <- rowSums(IATA[, c("NL", "Saint.Pierre.and.Miquelon")])
+#IATA["ALLCA"] <- IATA.CA$ALLCA
+#IATA["ALLCANotNL"] <- IATA$ALLCA - IATA$ALLNL #subtract with-in travellers
 
 #export the interested for the converting to daily later
 copy.IATA <- IATA.CA %>% left_join(IATA.FR , by = "date")
+
 
 
 IATA <- select(copy.IATA, "date", "AllFR", "ALLCANotNL")
@@ -84,7 +90,6 @@ for (i in 1:nrow(pcopy.IATA)){
     pcopy.IATA[i,j] <- pcopy.IATA[i,j]*100/pcopy.IATA$AllFR[i]
   }
 }
-#test rowSums(pcopy.IATA[,2:13]), rowSums(pcopy.IATA[,14:15])
 
 # remove extra:AlLFR spiltted to US and nonUS (ALLCANotNL, splitted to provinces ex NL) 
 pcopy.IATA <- select(pcopy.IATA, -c( "AllFR", "ALLCANotNL" )) 
@@ -173,9 +178,6 @@ m.copy.NLCHI <- lmcopy.NLCHI %>%
                    ALLCANotNL = sum(ALLCANotNL), AllFR=sum(AllFR)) %>%
   as.data.frame()
 
-# to check the result some equal aggregate
-#AA <- aggregate(nonUS ~ month + year, copy.NLCHI, FUN = sum)
-#test sum(copy.NLCHI$ON[243:273]) or sum(copy.NLCHI$BC[1:30])
 
 #make one column for date
 m.copy.NLCHI <- m.copy.NLCHI %>%
@@ -183,9 +185,6 @@ m.copy.NLCHI <- m.copy.NLCHI %>%
 m.copy.NLCHI$date <- as.Date(paste(m.copy.NLCHI$date,"-01",sep=""))  # convert to date
 m.copy.NLCHI <- m.copy.NLCHI  %>% relocate(date, .before = year) # organising
 m.copy.NLCHI <- select(m.copy.NLCHI , -c(year, month))
-
-#write.csv(m.copy.NLCHI,  "Data/TraVolData/month_cleanNLCHI.csv", row.names = FALSE)
-
 
 #make percentage
 pcopy.NLCHI <- m.copy.NLCHI
@@ -227,38 +226,10 @@ p1 <- ggplot() +
 
 p1
 ```
-
-# Pre-pandemic
-##visualize Air from international (IATA) and all from Intenational(FC) - pre pandemic 
-```{r}
-Vis <- IATA
-Vis <- Vis %>% left_join(FC, by='date') 
-
-colLeg <- c("IATA" = cpalete[6], "FC" = cpalete[7])
-p2 <- ggplot() + 
-  geom_point( data= Vis, aes(x=date, y=AllFR ,  color='IATA')) +
-  geom_point( data= Vis, aes(x=date, y=total , color='FC')) +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  labs(x="", y="\n Arrival travellers", title="Pre-pandemic, International origin") +
-  scale_color_manual(values = colLeg) +
-  guides(color = guide_legend(title = "Data Source"), size=rel(1.4)) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.3)), 
-                          legend.position="bottom",
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.4), face="bold"),
-                          axis.title = element_text(size=rel(1.3)),
-                          axis.text.y = element_text(size=rel(1.3)))
-
-
-
-p2
-```
 # Pre-pandemic
 ## 1.1 Pre pandemic CA Origins - 2016 report (3.3) regardless of origin
 ```{r}
 ## Find Pre pandemic from CA origins by Auto from Air(IATA-CA)
-## Spring/Summer 73 air, 27 other Fall/Winter 81 air, 19 other, 88 air and 12 other 
-## April-August 73/27 air/other, Sep-Oct-Nov-March 81/19 , Dec-Jan-Feb 88/12 
 # Make a dataframe 
 date <- seq(as.Date("2019-01-01"),as.Date("2020-03-01"),by = "month")  # Remove/Add March
 PrePandemic <- as.data.frame(date)
@@ -297,40 +268,6 @@ PrePandemic["Int"] <- FC$total[1:15]
 
 PrePandemic["total"] <- rowSums(PrePandemic[,c("CA", "Int")])
 ```
-
-## (Pre pandemic) bar-plot fraction of CA/Int arrival in NL 
-```{r}
-## add Int-Air/auto/total and CA-Air/auto/total to the prepandemic dataframe
-plotpre <- select(PrePandemic, c("date", "Int", "CA"))
-plotpre <- plotpre[1:15,] ##3:14
-plotpre <- melt(plotpre, id=c("date"))
-
-ggplot(data=plotpre , aes(x=date, y=value, fill=variable)) +
-  geom_bar(stat="identity") +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  #scale_y_continuous(breaks = c(100000, 200000, 300000, 400000,500000))+
-  labs(color=" ", 
-       title="Pre-pandemic",
-       y="\n Arrival travellers",
-       x="") +
-  theme(axis.title = element_text(size = 12)) +
-  #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 13))+
-  guides(fill = guide_legend(title = "Departure Origin"), size=rel(1.4))+
-  theme(legend.position="right") +
-  scale_fill_manual(values=c(cpalete[1], cpalete[2])) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.3)), 
-                          legend.title = element_blank(),
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.4), face="bold"),
-                          axis.title = element_text(size=rel(1.3)),
-                          axis.text.y = element_text(size=rel(1.3)))
-
-
-
-```
-
-
-
 # During pandemic
 ## Report 2020-2021
 ```{r}
@@ -368,53 +305,6 @@ NLCHI_month <- NLCHI_month %>% rename( NLCHI_CA = ALLCANotNL , NLCHI_Int = AllFR
 Pandemic_month <- NLCHI_month %>% left_join( Pandemic, by='date')
 
 ```
-##visualize all from International(FC) vs NLCHI - During-pandemic
-```{r}
-Vis2 <- Pandemic_month
-
-colLeg <- c("TDF-INT" = cpalete[6], "FC" =cpalete[7]) 
-p3 <- ggplot() + 
-  geom_point( data= Vis2, aes(x=date, y=NLCHI_Int ,  color='TDF-INT')) +
-  geom_point( data= Vis2, aes(x=date, y=FC , color='FC')) +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  labs(x="", y="\n Arrival travellers", title="During pandemic, International origin") +
-  scale_color_manual(values = colLeg) +
-  guides(color = guide_legend(title = "Data Source"), size= rel(1.4))+
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.3)), 
-                          legend.position="bottom",
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.4), face="bold"),
-                          axis.title = element_text(size=rel(1.3)),
-                          axis.text.y = element_text(size=rel(1.3)))
-
-
-p3
-```
-##visualize all (government vs NLCHI) - During-pandemic
-```{r}
-Vis2 <- Pandemic_month
-Vis2["NLCHI"] <- Vis2$NLCHI_Int+ Vis2$NLCHI_CA
-
-colLeg <- c("TDF" = cpalete[6], "GV" = cpalete[7]) 
-p4 <- ggplot() + 
-  geom_point( data= Vis2, aes(x=date, y=NLCHI ,  color='TDF')) +
-  geom_point( data= Vis2, aes(x=date, y=GV_nonres , color='GV')) +
-  scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-  labs(x="", y="\n Arrival travellers", title="During pandemic-Nonresident tavelers") +
-  scale_color_manual(values = colLeg) +
-  guides(color = guide_legend(title = "Data Source"), size=rel(1.4)) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.3)), 
-                          legend.position="bottom",
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.4), face="bold"),
-                          axis.title = element_text(size=rel(1.3)),
-                          axis.text.y = element_text(size=rel(1.3)))
-
-p4
-
-```
-
 ##Equation 5  (use NLCHI data, so it is from Sep 20 to May 21)
 ```{r}
 #Exempt from International,  compare (FCInt) vs NLCHI_Int (should include FCNonRes!)
@@ -435,6 +325,7 @@ DailyNewPan <- Pandemic_month
 
 Pandemic_month <- select(Pandemic_month, c("date", "Int", "Eq5"))
 ```
+
 # All time - merging
 ## make One data frame(pre-duing pandemic with Eq5 or Eq6)
 ```{r}
@@ -548,7 +439,6 @@ p10 <- ggplot() +
                           axis.text.y = element_text(size=rel(1.2)))
 
 p10
-#ggsave("Figure/fig1.png", width = 10, , height = 7)
 
 ```
 
@@ -609,8 +499,6 @@ for (i in 1:nrow(CRPer)){
 }
 CRPer <- select(CRPer, -c("Int", "CA", "estimated"))
 
-#write.csv(CRPer, "Data/CRPer.csv", row.names = FALSE)
-
 ```
 
 # plot percent after correction (plot stack percentage IATA and NLCHI )
@@ -664,45 +552,6 @@ cut2 <- data.frame(Ref = c( "Travel declaration data begins"),
 p6
 
 ```
-# for regresion (glm) supporting stack plotting
-```{r}
-ff <- CRPer
-ff <- subset(ff, !date %in% c(as.Date("2019-01-01"), as.Date("2019-02-01"), as.Date("2020-03-01")) )
-# we do not have June, July and August for NLCHI, so remove from IATA
-ff <- subset(ff, !date %in% c(as.Date("2019-06-01"), as.Date("2019-07-01"), as.Date("2019-08-01")))
-
-
-meltper <- melt(ff, id=c("date"))
-meltper <- meltper %>% rename( origin=variable, proport=value)
-#add month-date
-meltper$year  <- strftime(meltper$date, "%Y")   
-meltper$month <- strftime(meltper$date, "%m") 
-
-meltper["beforeafter"] <- NA
-for (i in 1:nrow(meltper)){
-  if (meltper$date[i] < as.Date("2020-03-01") ) {meltper$beforeafter[i] <- "before"} 
-  else {meltper$beforeafter[i] <- "after"}
-}
-
-## make column as factor
-meltper <- meltper %>% mutate(month = as.factor(month), beforeafter = as.factor(beforeafter),
-                     year = as.factor(year), origin= as.factor(origin))
-
-meltper$proport <- (meltper$proport)/100 # respond variable should be between 0, 1 for bionomial
-
-model <- glm( proport ~ month + beforeafter + origin , family = binomial , data=meltper)  #year
-summary(model)
-
-#Is an interaction term significant?
-lm.interact <- glm(proport ~ beforeafter*origin, family = binomial, data = meltper)
-summary(lm.interact)
-
-anova(model, lm.interact)
-
-anova(model, lm.interact, test = "Chisq")
-
-# not ON anova less with "Chisq" test
-```
 ## Daily tra- during the pandemic
 ```{r}
 ##DailyNewPan
@@ -721,7 +570,6 @@ for (i in 1:nrow(Dailypro)){
     Dailypro[i,j] <- (Daily1$exclCA[i])*(perCAPan[i,j]/100)
   }
 }
-## check rowSums(Dailypro[,2:11])= excluded CA in Daily1
 
 ## make a dataframe of exculded NLCHI for province and INT
 Dailypro <- Dailypro %>% left_join(select(Daily1, c(date, exclINT)), by ="date")
@@ -756,11 +604,6 @@ Daily2 <- Daily2 %>%
 #keep the interested columns
 Daily2 <- select(Daily2, -c("date.y", "Ym")) %>% rename(date = date.x)
 Daily2 <- Daily2 %>% rename(INT= exclINT)
-# check rowSums(Daily2[1,2:11])*30 = 15048
-# round data
-#Daily2 <- data.frame(lapply(Daily2, function(x) if(is.numeric(x)) floor(x, 0) else x))
-                           
-# Daily2 is Daily excluded, now it is time to add it to NLCHI (TDF)
 
 NLCHI <- read.csv("Data/TraVolData/TravelVolumeNLCHI.csv")
 NLCHI$Date <- as.Date(as.character(NLCHI$Date), format = "%Y-%m-%d") 
@@ -783,10 +626,7 @@ for (i in 1:length(origin)){
     Tra_daily2[j, pr] <- TDF[j, pr] + Daily2[j,pr]
   }
 }
-#write.csv(Tra_daily2, "Data/CRdaily2.csv", row.names = FALSE)
 ```
-
-
 ## canada Map (NLCHI and IATA) - It is possible for one date (consider average 9-month September to May)
 ```{r}
 AA <- CRPer
@@ -829,10 +669,6 @@ A2 <- A2 %>% rename(Percentage = A2)
 A2$province[A2$province == 'PEI'] <- 'PE'
 
 
-## canada map
-library(mapcan)
-#ColourPalette <- RColorBrewer::brewer.pal(11, 'Spectral') 
-
 pr_geographic <- mapcan(boundaries = province, type = standard)
 pr_geographic <- inner_join(pr_geographic, A1, by = c("pr_alpha" = "province")) 
 
@@ -860,7 +696,7 @@ m1 <- pr_geographic %>%
    )+
   theme_mapcan() + theme(legend.position="bottom",
                          plot.title=element_text(size=rel(1.3), face="bold"))+ 
-  ggtitle("Before the Pandemic")
+  ggtitle("Before the pandemic")
 
 
 
@@ -891,7 +727,7 @@ m2 <- pr_geographic2 %>%
     ) +
   theme_mapcan() + theme(legend.position="", 
                          plot.title=element_text(size=rel(1.3), face="bold"))+
-  ggtitle("During the Pandemic")
+  ggtitle("During the pandemic")
 
 
 m1 + m2  
@@ -975,13 +811,12 @@ m3 <- pr_geographic %>%
     ) +
   theme_mapcan() + theme(legend.position="bottom",
                          plot.title=element_text(size=rel(1.3), face="bold"))+
-  ggtitle("Before the Pandemic")
+  ggtitle("Before the pandemic")
 
 
 pr_geographic2 <- mapcan(boundaries = province, type = standard)
 pr_geographic2 <- inner_join(pr_geographic2, C2, by = c("pr_alpha" = "province")) 
 
-#C2["diff"] <- C1$Daily - C2$Daily
 df.label <- read.csv("Data/df.label2.csv")
 df.label <- df.label %>% left_join(C2 , by= "province")
 
@@ -1004,15 +839,13 @@ m4 <- pr_geographic2 %>%
     ) +
   theme_mapcan() + theme(legend.position="", 
                          plot.title=element_text(size=rel(1.3), face="bold"))+
-  ggtitle("During the Pandemic")
+  ggtitle("During the pandemic")
 
 m3 + m4 
-#ggsave("Figure/map2.png", width = 12, , height = 8)
 ```
+
 # plot infected NLCHI
 ```{r}
-#rolling percentage
-library(zoo)
 Intype <- read.csv("Data/IM215194-TravelType.csv")
 Intype$REPORTED_DATE <- as.Date(as.character(Intype$REPORTED_DATE), format = "%Y-%m-%d")
 
@@ -1038,9 +871,6 @@ Ave.df  <- Ave.df  %>%
   mutate(date = with(., sprintf("%s-%02s", year.x, month)))
 Ave.df$date <- as.Date(paste(Ave.df$date,"-01",sep=""))  # convert to date
 Ave.df <- select(Ave.df  , c(date, Tot.Int, Tot.Dom))
-# add a row (repeat the last row) for end of May  for plotting
-#x <- data.frame(date = as.Date("2021-05-31"), Tot.Int = 0.54838710 , Tot.Dom = 3.4516129)
-#Ave.df <- rbind(Ave.df, x)
 
 ## repeat days for plotting 
 Ave.df["Ym"] <- format(as.Date(Ave.df$date), "%Y-%m")
@@ -1083,45 +913,18 @@ p7 <- ggplot() +
 
 p7
 ```
-
 ##plots
 ```{r}
-(p10 + p5 ) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Volume.png", width = 14, , height = 5, dpi =500)
-ggsave(file = "Figure/BMB/Volume.eps", width = 14, , height = 5, dpi= 500)
-
-(m3+m4 ) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Daily.png", width = 10, , height = 6, dpi= 500)
-ggsave(file = "Figure/BMB/Daily.eps", width = 10, , height = 6, dpi= 500)
-
-
-(m1+m2 ) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Appred.png", width = 10, , height = 6, dpi= 500)
-ggsave(file = "Figure/BMB/Appred.eps", width = 10, , height = 6, dpi= 500)
-
-
-##heights = unit(c(10, 1 ), c('cm', 'null')), the first row will occupy 10cm, while the second will expand to fill the ## remaining area.
 (p10+p5)/(m3+m4 ) + plot_layout(heights = unit(c(6.5, 1 ), c('cm', 'null'))) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/reduction3.png", width = 14, , height = 12, dpi= 500)
-ggsave(file = "Figure/BMB/reduction3.eps", width = 14, , height = 12, dpi= 500)
+ggsave("Figure/Figure1.png", width = 14, , height = 12, dpi= 500)
 
 
 (p6)/(m1+m2 ) + plot_layout(heights = unit(c(5.8, 1 ), c('cm', 'null'))) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/corrected2.png", width = 9, , height = 10, dpi= 500)
-ggsave(file = "Figure/BMB/corrected2.eps", width = 9, , height = 10, dpi= 500)
+ggsave("Figure/Figure2.png", width = 9, , height = 10, dpi= 500)
 
 (p1 + p7 ) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/NLCHI.png", width = 10, , height = 6, dpi =500)
-ggsave(file = "Figure/BMB/NLCHI.eps", width = 10, , height = 6, dpi= 500)
-
-
-(p2 + p3)/p4 + plot_annotation(tag_levels = 'A')
-ggsave("Figure/diffsource.png", width = 12, , height = 8, dpi =1200)
-ggsave(file = "Figure/BMB/diffsource.eps", width = 12, , height = 8, dpi= 1200)
+ggsave("Figure/FigureApp2.png", width = 10, , height = 6, dpi =500)
 
 ```
-
-
-
 
 

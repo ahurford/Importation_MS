@@ -2,26 +2,6 @@
 ## Project: Importation Risk
 ##---------- 1. Load libraries ------------
 source("preliminaries.R")
-# library(dplyr)
-# library(ggplot2); theme_set(theme_bw())
-# library(viridis)
-# library(tidyverse)
-# library(lubridate)
-# library("readxl")
-# library(reshape2)
-# library(patchwork)  #combine separate ggplots
-# library(scales)
-# library(zoo)
-# library(RColorBrewer)
-# library(zeallot) #for list output
-# require(broom)   #for summary lm function 
-# library(AICcmodavg)
-# library(zetadiv)
-# library(pscl) # for calculate McFadden's R-squared for model
-# 
-# ## Color palette
-# cpalete = c( "#999999", "#E69F00", '#336699',"#99FF33", "#CC6699", "#cc0000", "#414487FF" ,"#35B779FF") #"#31688EFF"
-# #Origin: Int , CA , source  FC, IATA, NLCHI,
 
 ##---------- 2. Read data ------------
 # COVID cases in origins (CA excluded NL and US would consider as International)
@@ -89,7 +69,6 @@ CFCase <- function(df1, df2, origins){
 
 origins <- c("AB", "BC","NB", "MB","NS","ON", "PEI","QC", "SK", "TR", "US")
 Case2 <- CFCase(CF, Case, origins)
-#test2 Case$SK[15]+1.147719*Case$SK[15], Case$AB[1]+0.9877608*Case$AB[1]
 
 #Daily incidence proportion in departure (per date)
 Dailyinc <- function(df1, pop, origins){
@@ -108,8 +87,6 @@ Dailyinc <- function(df1, pop, origins){
 }
 origins <- c("AB", "BC","NB", "MB","NS","ON", "PEI","QC", "SK", "TR", "US")
 Dailyinfpre <- Dailyinc(Case2,pop, origins )
-# e.g. #US Case2$US[1+11]/332660077 == Dailyinfpre$US[1], #ON Case2$ON[120+11]/14566547 = Dailyinfpre$ON[120]
-# the last 11 days in July NA that is correct that need to be removed
 Dailyinfpre  <- Dailyinfpre  %>% filter(Dailyinfpre$date < as.Date("2021-06-01"))
 
 ## the rate of infected travelers including pre-test or not (changed value by 
@@ -134,14 +111,11 @@ T.INT <- function(t, a, df1, df2, pr){
   return(x)
 }
 
-#test T.INT(as.Date("2021-01-01"), 3, Dailyinfpre, rt_Volume, "US") =  86*0.0019933443*0.69*0.75*lambda[3]
-# T.INT(as.Date("2021-01-07"), 3, Dailyinfpre, rt_Volume, "US") =  0.0012662203*83*(1- tsens[1]) , T.INT(as.Date("2021-01-07"), 2, Dailyinfpre, rt_Volume, "US") =0
-
 
 T.CA <- function(t, a, df1, df2, pr){
   # df1 = Dailyinfpre , df2 = travel volume (r or rw)
   rho <- 0.69 
-  psi <- 0.75   #0.75
+  psi <- 0.75   
   #PCR Test sensitivity - age infection 0-25
   tsens <- c(0, 0.05, 0.1, 0.55, 0.78, 0.77, 0.73, 0.68, 0.64, 0.59, 0.55, 
              0.49, 0.43,0.37, 0.31, 0.25, 0.22, 0.19, 0.16, 0.13, 0.1, 0.09,
@@ -158,9 +132,7 @@ T.CA <- function(t, a, df1, df2, pr){
   }
   return(x)
 }
-# test T.CA(as.Date("2021-01-01"), 3, Dailyinfpre, rt_Volume, "ON") = 0.0004027853*60*rho*psi*lambda[3]
-# test T.CA(as.Date("2021-05-16"), 3, Dailyinfpre, rw_Volume, "AB"),  114*2.332756e-04*(1- tsens[1])
-# T.CA(as.Date("2020-09-01"), 3, Dailyinfpre, rw_Volume, "TR") 0 since Dailyinfpre 0 befor october 7 
+
 ##################### International- regular travelers
 R.INT.s = function(Dailyinfpre, rt_Volume, pr){
   df1 <- data.frame(date =seq(from=as.Date("2020-09-01"), to = as.Date("2021-05-31"), by = "days"))
@@ -192,12 +164,7 @@ R.INT.s = function(Dailyinfpre, rt_Volume, pr){
 }
 
 R.INT1 <- R.INT.s(Dailyinfpre, rt_Volume, "US") 
-# test t <- as.Date("2021-05-31") x <- 0
-#for (a in 1:14){
-#  xa <- T.INT(t, a, Dailyinfpre, rt_Volume, "US")*tsens[a+abar+tr]
-#  x <- x + xa
-#}
-#x*PS*rho
+
 
 R.INT.e = function(rt_Volume, pr){
   df1 <- data.frame(date =seq(from=as.Date("2020-09-01"), to = as.Date("2021-05-31"), by = "days"))
@@ -233,8 +200,7 @@ R.INT.e = function(rt_Volume, pr){
 }
 
 R.INT2 <- R.INT.e(rt_Volume, "US")
-# test 209*0.01*tsens[6] for "2020-09-27" / 141*0.02*tsens[6] for "2021-05-11"
-#######################Canadian Province
+####################### Canadian Province -- regular travelers
 R.CA.s = function(Dailyinfpre, rt_Volume, pr){
   df1 <- data.frame(date =seq(from=as.Date("2020-09-01"), to = as.Date("2021-05-31"), by = "days"))
   tr <- 3
@@ -263,11 +229,6 @@ R.CA.s = function(Dailyinfpre, rt_Volume, pr){
   }
   return(df1)
 }
-# test xx <- R.CA.s(Dailyinfpre, rt_Volume, "ON") vs t <- as.Date("2021-05-31") x <- 0
-#for (a in 1:14){
-#  xa <- T.CA(t, a, Dailyinfpre, rt_Volume, "ON")*tsens[a+abar+tr]
-#  x <- x + xa}
-#x*PS*rho
 
 # regular travelers is similar INT, so
 Province <- function(Dailyinfpre, rt_Volume, origins){
@@ -286,7 +247,6 @@ Province <- function(Dailyinfpre, rt_Volume, origins){
 
 origins <- c("ON", "QC","MB","NB","AB","NS","BC","SK","PEI","TR")
 R.CA1 <- Province(Dailyinfpre, rt_Volume, origins )  
-# check ON xx <- R.CA.s(Dailyinfpre, rt_Volume, "ON") or AB (0 for 2021-01-31) correct no regular travelers (71 rw)
 
 R.CA.e = function(rt_Volume, pr){
   df1 <- data.frame(date =seq(from=as.Date("2020-09-01"), to = as.Date("2021-05-31"), by = "days"))
@@ -337,9 +297,8 @@ Province2 <- function(rt_Volume, origins){
 
 origins <- c("ON", "QC","MB","NB","AB","NS","BC","SK","PEI","TR")
 R.CA2 <- Province2( rt_Volume, origins )  
-## test ON for sep1 89*0.01*tsens[6], AB for May30 13*0.03*tsens[6]
 
-########### 2.Rotational workers for Canada
+######################## Canadian Province -- Rotational workers
 RW.CA.s = function(j1, j2, j3, Dailyinfpre, rw_Volume, pr){
   df1 <- data.frame(date =seq(from=as.Date("2020-09-01"), to = as.Date("2021-05-31"), by = "days"))
   trep <- 1
@@ -394,7 +353,6 @@ RW.CA <- function(){
 }
 
 RW.Pro <- RW.CA()
-# check rw.AB$S1[1]+rw.ON$S1[1]+rw.PEI$S1[1]+rw.QC$S1[1]+rw.SK$S1[1]+rw.BC$S1[1]+rw.MB$S1[1]+rw.NB$S1[1]+rw.NS$S1[1]+rw.TR$S1[1]
 ## merge three times in RW.Pro
 RW.Pro2 <- function(){
   df1 <- select(RW.Pro, c(report1,S1)) %>% rename(report = report1)
@@ -408,7 +366,7 @@ RW.Pro2 <- function(){
   return(df1)
 }
 
-Imp.CA.rw <- RW.Pro2() # checked correct
+Imp.CA.rw <- RW.Pro2() 
 
 #################aggregate
 Imp.INT <- R.INT2 %>% left_join(R.INT1, by = "report")
@@ -436,7 +394,6 @@ Imp.CA <- function(R.CA1, R.CA2){
 Imp.CA.r <- Imp.CA(R.CA1, R.CA2)  
 Imp.CA.r[is.na(Imp.CA.r)] <- 0
 Imp.CA.r["RE.Ca"] <- rowSums(Imp.CA.r[, c("ON", "PEI", "QC", "SK", "AB", "BC", "MB", "NB", "NS", "TR")])
-# check R.CA1$TR[R.CA1$report == "2020-12-30"]+R.CA2$TR[R.CA2$report == "2020-12-30"]
 # merger regular and rotational workers together and sum
 Imp.CA <- Imp.CA.r %>% left_join(Imp.CA.rw, by = "report")
 Imp.CA["REW.Ca"] <- rowSums(Imp.CA[, c("RE.Ca","RW")])
@@ -446,7 +403,7 @@ IMP <- Imp.CA %>% left_join(select(Imp.INT , c(report, RE.Int)) , by = "report")
 IMP["Total"] <- rowSums(IMP[, c("REW.Ca","RE.Int")])
 ## Remove September5, since I just have rw not r 
 IMP <- IMP %>% filter(IMP$report >= as.Date("2020-09-06") & IMP$report < as.Date("2021-06-01"))
-##------------- 4. plots -----------------------------------------
+
 #make monthly version
 IMP$year  <- strftime(IMP$report, "%Y")
 IMP$month <- strftime(IMP$report, "%m")
@@ -457,77 +414,8 @@ IMP.month <- IMP %>%
                    Total= sum(Total)) %>%
   as.data.frame()
 
-# 
-# #estimated infected- bar plot
-# df1.sub <- select(IMP, c("report" , "RE.Int", "REW.Ca" ))
-# df1.sub <- df1.sub %>% rename(INT = RE.Int, CA = REW.Ca)
-# mdf1.sub <- melt(df1.sub, id=c("report"))
-# 
-# m7 <- ggplot() +
-#   geom_bar(data=mdf1.sub , aes(x=report, y=value, fill=variable), stat="identity") +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   labs(color=" ", 
-#        title="Epidemiological model predictions",
-#        y="\n Reported travel-related cases (daily)",
-#        x="") +
-#   guides(fill = guide_legend(title = "Departure Origin"))+
-#   theme(legend.position="right") +
-#   scale_fill_manual(values=c(cpalete[1], cpalete[2])) + 
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)), 
-#                           legend.position="bottom" ,
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))
-# 
-# 
-# ### infected percentage rw and r in Canada and International
-# df2.sub <- select(IMP, c("report", "RE.Int", "RE.Ca", "RW", "Total"))
-# 
-# for (i in 1:nrow(df2.sub)){
-#   for (j in 2:length(df2.sub)){
-#     df2.sub[i,j] <- (df2.sub[i,j]*100)/(df2.sub$Total[i])
-#   }
-# }
-# df2.sub <- select(df2.sub, -c("Total")) %>% rename(CA.r = RE.Ca, CA.rw = RW, INT = RE.Int)
-# mdf2.sub <- melt(df2.sub, id=c("report"))
-# 
-# m9 <- ggplot() +
-#   geom_bar(data=mdf2.sub , aes(x=report, y=value, fill=variable), stat="identity") +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   labs(color=" ", 
-#        title="Epidemiological model predictions",
-#        y="\n Reported travel-related cases (daily %)",
-#        x="") +
-#   guides(fill = guide_legend(title = "Type of Travelers"))+
-#   theme(legend.position="right") +
-#   scale_fill_manual(values=c(cpalete[1], cpalete[2], "#FFCC63")) + 
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.3)), 
-#                           legend.position="bottom" ,
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))+ 
-#   scale_y_continuous(labels = function(x) paste0(x*1, "%"))
-# 
-# 
-# (m7+ m9) + plot_annotation(tag_levels = 'A')
-# ggsave("Figure/Figure5.png", width = 10, , height = 6, dpi= 500)
-# ggsave(file = "Figure/BMB/Figure5.eps", width = 10, , height = 6, dpi = 500) #dpi = 1200
-
-##--------------- 5. competitive models (monthly) -----------------------------------------
-############# Models 
-##it is ok to just call vectors but for further investigation e.g. cor I am making data frame for each model 
-## for glm.cons have to calculate R-square manually
-# R SQUARED error metric -- answer equal summary
-RSQUARE = function(actual, preds){
-  sse = crossprod(actual - preds)
-  #sst=crossprod(actual - mean(actual))
-  sst = crossprod(actual)
-  rsq <- 1-sse/sst
-  return(rsq)
-}
-## for international
+##--------------- 5. competitive models (daily) -----------------------------------------
+############# Models for international
 df.model6 <- select( Travel_case, c(date, Tot.Int)) %>% left_join(Volume , by ="date")
 df.model6 <- select(df.model6, c(date, Tot.Int, US)) %>% rename( vol = US, Rep.Int = Tot.Int )
 df.model6 <- df.model6 %>% left_join(Dailyinfpre, by ="date")
@@ -550,27 +438,24 @@ mod <- list(TVInt, InfInt, TVInfInt)
 mod.name <-  c("TravelVolume-Int", "Infection.Prevalence-Int", "TravelVolume*Infection.Prevalence-Int")
 aictab(cand.set = mod, modnames = mod.name , c.hat = 1) 
 
-#########For Domestic
+######### Models for Domestic
 df.model7 <- select( Travel_case, c(date, Tot.Dom)) %>% left_join(Volume , by ="date") 
 df.model7 <- select(df.model7, -c(US)) %>% rename(Rep.Dom = Tot.Dom)
 df.model7["vol.CA"] <- rowSums(df.model7[, c("ON", "PEI", "QC", "SK", "AB", "BC", "MB", "NB", "NS", "TR")])
-
+#travel volume provinces
 TVPr <- lm(Rep.Dom ~ 0+ AB + BC + MB + NB + NS + ON + PEI + QC + SK + TR, data = df.model7 ) 
 summary(TVPr)
-
-
+#travel volume Canada
 TVCA <- lm( Rep.Dom ~ 0 + vol.CA, data= df.model7)
 summary(TVCA)
 
-  
 df.model8 <- select( Travel_case, c(date, Tot.Dom)) %>% left_join( Dailyinfpre, by ="date") 
 df.model8 <- select(df.model8, -c(US)) %>% rename(Rep.Dom = Tot.Dom)
 df.model8["inf.CA"] <- rowSums(df.model8[, c("ON", "PEI", "QC", "SK", "AB", "BC", "MB", "NB", "NS", "TR")])
-
+#infection provinces
 InfPr <- lm(Rep.Dom ~  0 + AB + BC + MB + NB + NS + ON + PEI + QC + SK + TR, data = df.model8)
 summary(InfPr)
-
-
+#infection Canada
 InfCA <- lm(Rep.Dom  ~ 0+ inf.CA , data = df.model8 )
 summary(InfCA)
 
@@ -591,10 +476,10 @@ origins <- c("AB", "BC","NB", "MB","NS","ON", "PEI","QC", "SK", "TR")
 df.model9 <- multivolinf(df.model7, df.model8, origins)
 df.model9["volinfCA"] <- (df.model7$vol.CA)*(df.model8$inf.CA)
 df.model9 <- select(df.model9, -c(vol.CA))
-  
+#province  
 TVInfPr <- lm(Rep.Dom  ~ 0 + AB + BC + MB + NB + NS + ON + PEI + QC + SK + TR ,  data = df.model9 )
 summary(TVInfPr)
-
+#Canada
 TVInfCA <- lm(Rep.Dom  ~ 0 + volinfCA , data = df.model9 )
 summary(TVInfCA)
 
@@ -605,26 +490,22 @@ model.names <-  c("Travel.Volume-Provinces", "Travel.Volume-CA", "Infection.Prev
                   "TravelVolume*Infection.Prevalence-CA")
 aictab(cand.set = models, modnames = model.names, c.hat = 1) 
 
-################ Full- model
+################epidemiology model
 df.modelfull <- select(IMP, c("report", "REW.Ca", "RE.Int")) %>% rename(date = report)
 df.modelfull <- df.modelfull %>% left_join(select(Travel_case, c(date, Tot.Dom, Tot.Int)), by = "date") 
 df.modelfull <- df.modelfull %>% rename(Est.Dom = REW.Ca, Est.Int = RE.Int ,
                                         Rep.Dom = Tot.Dom, Rep.Int = Tot.Int)
-
-##
 set.seed(1066); 
 normalF <- function(sigma) {
-  x <- df.modelfull$Est.Dom
-  y <- df.modelfull$Rep.Dom
+  x <- df.modelfull$Est.Dom  #Est.Int
+  y <- df.modelfull$Rep.Dom  #Rep.Int
   sum (- 0.5*log(2*pi) - 0.5*log(sigma) - 0.5*(x - y)^2/sigma )
 }
 
-# model L-BFGS-B returns some error but the result is the same as Brent, CG
-MLE = optim(c(0.1),               # initial values for sigma
+MLE = optim(c(0.1),               
             fn = normalF,         # function to maximize
             method = "L-BFGS-B",  # this method lets set lower bounds
-            lower = -Inf,         # lower limit for parameters #0.00001
-            #upper = 5,
+            lower = -Inf,         
             control = list(fnscale = -1), # maximize
             hessian = T                   # calculate Hessian matricce 
 )
@@ -640,12 +521,12 @@ MLE$value
 R2(df.modelfull$Est.Dom, df.modelfull$Rep.Dom)
 R2(df.modelfull$Est.Int, df.modelfull$Rep.Int)
 
-########################
+######### Save the best
 bestmodel.Int <- predict(TVInt)
 bestmodel.CA <- predict(TVInfPr)
 # these are 273 values start from Sep 1 whereas predicted Imp start from Sep 6, 
 # do adjust to make dataframe
-#####################################
+######### make one dataframe including epi model, best model and reported for plotting 
 cdf1 <- df.modelfull
 cdf1["bestInt"] <- bestmodel.Int[6:273]   
 cdf1["bestDom"] <- bestmodel.CA[6:273]  
@@ -692,94 +573,3 @@ df2.Int <- melt(df2.Int, id=c("date"))
 df2.Dom <- select(cdf2, c(date, bCA, CA))
 df2.Dom <- melt(df2.Dom, id=c("date"))
 
-
-# #plot daily
-# plt1 <- c( "Best model"=cpalete[8], "Epidemiological model" = cpalete[7],"Data" = cpalete[1])
-# p1 <- ggplot() +
-#   geom_line(data=cdf1, aes(x=date, y= Rep.Int, color='Data'), size=1) +
-#   geom_bar(data=df1.Int, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(), alpha=.8 ) +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-#   labs(x="", y="\n Reported travel-related cases (daily)",
-#        title="Comparison of model predictions to reported travel-related cases \n International") +
-#   scale_fill_manual(name = "", labels = c( "Best model", "Epidemiological model","Data"), values = c( cpalete[8],cpalete[7], cpalete[1])) +
-#   scale_color_manual(values = plt1) +
-#   guides(color = guide_legend(title = ""), size=rel(1.4)) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-#                           legend.position="bottom",
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))
-# 
-# 
-# plt2 <- c( "Best model"=cpalete[8],"Epidemiological model" = cpalete[7], "Data" = cpalete[2])
-# p2 <- ggplot() +
-#   geom_line( data=cdf1, aes(x=date, y= Rep.Dom, color='Data'), size=1) +
-#   geom_bar(data=df1.Dom, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(), alpha=.8) +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-#   labs(x="", y="\n Reported travel-related cases (daily)",
-#        title="Comparison of model predictions to reported travel-related cases \n Canada") +
-#   scale_fill_manual(name = "", labels = c( "Best-model", "Epidemiological-model","Reported"), values = c( cpalete[8],cpalete[7], cpalete[2])) +
-#   scale_color_manual(values = plt2) +
-#   guides(color = guide_legend(title = ""), size=rel(1.4)) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-#                           legend.position="bottom",
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))
-# 
-# 
-# p3 <- ggplot()+
-#   geom_bar(data=df2.Int, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8) +
-#   geom_line(data= cdf2, aes(x=date, y=RInt),stat="identity",color=cpalete[1], size=1) +
-#   geom_point(data= cdf2,  aes(x=date, y=RInt, color="Data"), size =2.8) +
-#   labs(x="", y="\n Reported travel-related cases (monthly)", title="International" ) +
-#   ylim(0, 30) +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-#   labs(x="", y="\n Reported travel-related cases (monthly)",
-#        title="Comparison of model predictions to reported travel-related cases \n International") +
-#   scale_fill_manual(name = "", labels = c("Best model","Epidemiological model", "Data"), values = c( cpalete[8],cpalete[7], cpalete[1])) +
-#   scale_color_manual(values = plt1)+
-#   guides(color = guide_legend(title = ""), size=rel(1.4)) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-#                           legend.position="bottom",
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))
-# 
-# 
-# p4 <- ggplot() +
-#   geom_bar(data=df2.Dom, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8 ) +
-#   geom_line(data= cdf2, aes(x=date, y= RCA),stat="identity",color=cpalete[2], size=1) +
-#   geom_point(data= cdf2,  aes(x=date, y= RCA, color="Data"), size =2.8) +
-#   ylim(0, 120) +
-#   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-#   labs(x="", y="\n Reported travel-related cases (monthly)",
-#        title="Comparison of model predictions to reported travel-related cases \n Canada") +
-#   scale_color_manual(values = plt2)+
-#   scale_fill_manual(name = "", labels = c( "Best model","Epidemiological model", "Data"), values = c( cpalete[8],cpalete[7], cpalete[2])) +
-#   guides(color = guide_legend(title = ""), size=rel(1.4)) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-#                           legend.position="bottom",
-#                           legend.text=element_text(size=rel(1.2)),
-#                           plot.title=element_text(size=rel(1.3), face="bold"),
-#                           axis.title = element_text(size=rel(1.1)),
-#                           axis.text.y = element_text(size=rel(1.2)))
-# 
-# #, alpha=.8 geom_bar is not working with .eps format
-# p2+p1 + plot_annotation(tag_levels = 'A')
-# ggsave("Figure/Imp22.png", width = 15, , height = 6, dpi =500)
-# #ggsave(file = "Figure/BMB/Imp22.eps", width = 15, , height = 10, dpi = 1200)
-# 
-# # for the paper
-# (m7+m9)/(p4+p3) + plot_annotation(tag_levels = 'A')
-# ggsave("Figure/Figure6.png", width = 15, , height = 10, dpi =500)
-# #ggsave(file = "Figure/BMB/Figure6.eps", width = 15, , height = 10, dpi = 1200)
-# 
-# 
