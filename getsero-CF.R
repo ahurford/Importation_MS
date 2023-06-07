@@ -1,3 +1,7 @@
+## Winter 2022
+## Project: Importation Risk
+## Zahra Mohammadi
+
 source("preliminaries.R")
 
 #################### 1.get data

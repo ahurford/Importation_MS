@@ -1,3 +1,7 @@
+## Winter 2022
+## Project: Importation Risk
+## Zahra Mohammadi
+
 source("preliminaries.R")
 
 #USA cases (CSSE at Johns Hopkins University is releasing cumulative counts)
