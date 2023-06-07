@@ -2,7 +2,7 @@
 ## Project: Importation Risk
 ## Zahra Mohammadi
 #-----------------------------
-source("RiskImp.R")
+source("REpimodel.R")
 ## IMP and dfplot data frames will be used for plotting
 ## IMP : output epi model Canadian provinces, rotational workers, regular travelers, INT
 ## dfplot : included best model, epi model and reported CA and INT
