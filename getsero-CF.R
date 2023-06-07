@@ -9,7 +9,7 @@ seUS = rbind(data.frame(date = c(seq(as.Date("2020-07-01"), as.Date("2021-06-01"
 
 
 ## Canada from (https://www.covid19immunitytaskforce.ca/seroprevalence-in-canada/)
-seCA = read_excel("/Users/zahramohammadi/Documents/GitHub/Risk-Importation/Data/Pro-seroprevalence.xlsx", sheet = "main")
+seCA = read_excel("Data/Pro-seroprevalence.xlsx", sheet = "main")
 seCA$date  <- as.Date(as.character(seCA$date), format = "%Y-%m-%d")
 # use NL sero data for territories (so for consistency use TR name)
 seCA <- seCA %>% rename( "TR" ="NL")
@@ -44,3 +44,4 @@ for (i in 1:length(origins)){
   b <- diffcum[pr][1,] 
   CF[pr] <- a/b
 }
+
