@@ -12,7 +12,7 @@ source("getcases.pro.R") # output: Case, Cum and pop
 source("getsero-CF.R") # output: CF
 
 # daily travel volume calculated in Volume-focusOrigin.R
-Volume <- read.csv("Data/CRdaily2.csv")
+Volume <- read.csv("Data/TraVolData/Totalvolume.csv")
 Volume$date <- as.Date(as.character(Volume$date), format = "%Y-%m-%d")
 # round data 
 Volume <- data.frame(lapply(Volume, function(x) if(is.numeric(x)) floor(x) else x))
