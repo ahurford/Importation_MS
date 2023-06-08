@@ -1,8 +1,11 @@
 ---
+## Winter 2022
+## Project: Importation Risk
+## Zahra Mohammadi
 title: "R Notebook"
 output: html_document 
 ---
-
+## load libraries
 ```{r}
 library(dplyr)
 library(ggplot2); theme_set(theme_bw())
@@ -158,7 +161,7 @@ mon.Travel.case <- ave.fun()
 rep.fun <- function(mon.Travel.case){
   df <- mon.Travel.case
   df["Ym"] <- format(as.Date(df$date), "%Y-%m")
-  Av.daily <- df %>% select(date) %>% 
+  Av_daily <- df %>% select(date) %>% 
     complete(date=  seq.Date(min(date), max(date)+30, by="day"),) %>%
     mutate(Ym=paste(year(date),str_pad(month(date), 2, pad = "0"),sep = "-"))
   Av_daily <- Av_daily %>% left_join(df, by="Ym")
@@ -413,7 +416,7 @@ reduct <- function(Final_data){
                               as.Date("2019-06-01"), as.Date("2019-07-01"), as.Date("2019-08-01")) )
   rownames(df) <- NULL  # Reset row names
   tot20 <- sum(df[1:9, 'estimated'], na.rm = TRUE)  #2019-2020 (before pan)
-  tot21 <- sum(xx[10:18, 'estimated'], na.rm = TRUE)   #2020-2021 (pan)
+  tot21 <- sum(df[10:18, 'estimated'], na.rm = TRUE)   #2020-2021 (pan)
   ##percentage decrease
   decrease <- tot20 - tot21
   prdecrease <- (decrease/tot20)*100
@@ -504,44 +507,48 @@ p7
 
 ## Canada Map (pre and during the pandemic), show average percentage over 9 month
 ```{r}
-AA <- CRPer
-# get the average months March 2019 to Feb 2020 (except June July August 2019) IATA (before Pandemic)
-AA <- subset(AA, !date %in% c(as.Date("2019-01-01"), as.Date("2019-02-01"), as.Date("2020-03-01"), as.Date("2019-06-01"), as.Date("2019-07-01"), as.Date("2019-07-01"), as.Date("2019-08-01")) )
-# Reset row names
-rownames(AA) <- NULL                
+Av.per <- function(CRPer){
+  AA <- CRPer
+  # get the average months March 2019 to Feb 2020 (except June July August 2019) 
+  AA <- subset(AA, !date %in% c(as.Date("2019-01-01"), as.Date("2019-02-01"), 
+                                as.Date("2020-03-01"), as.Date("2019-06-01"), 
+                                as.Date("2019-07-01"), as.Date("2019-07-01"), 
+                                as.Date("2019-08-01")) )
+  rownames(AA) <- NULL   # Reset row names             
+  AA1 <- AA[1:9,]        #pre-pandemic
+  AA2 <- AA[10:18,]      #pandemic
+  # get the mean for both dataframe
+  A1 <- colMeans(AA1[2:13])
+  A2 <- colMeans(AA2[2:13])
+  
+  A1 <- data.frame(A1)
+  A1 <- cbind(province = rownames(A1), A1)
+  rownames(A1) <- 1:nrow(A1)
+  #repeat TR for three tritories
+  A1[nrow(A1) + 1,] <- c( "YT",  0.338555269656022)
+  A1[nrow(A1) + 1,] <- c( "NT", 0.338555269656022)
+  A1[nrow(A1) + 1,] <- c( "NU",0.338555269656022)
+  A1$A1 <- as.numeric(A1$A1)
+  A1 <- A1 %>% rename(Percentage = A1)
+  A1$province[A1$province == 'PEI'] <- 'PE'
 
-#prepan
-AA1 <- AA[1:9,]
-#pan
-AA2 <- AA[10:18,]
+  A2 <- data.frame(A2)
+  A2 <- cbind(province = rownames(A2), A2)
+  rownames(A2) <- 1:nrow(A2)
+  #repeat TR for three tritories
+  A2[nrow(A2) + 1,] <- c( "YT", 3.62752706114931)
+  A2[nrow(A2) + 1,] <- c( "NT", 3.62752706114931)
+  A2[nrow(A2) + 1,] <- c( "NU", 3.62752706114931)
+  A2$A2 <- as.numeric(A2$A2)
+  A2 <- A2 %>% rename(Percentage = A2)
+  A2$province[A2$province == 'PEI'] <- 'PE'
 
-# get the mean for both dataframe
-A1 <- colMeans(AA1[2:13])
-A2 <- colMeans(AA2[2:13])
+  #return(A1)
+  return(A2)
+}
 
-A1 <- data.frame(A1)
-A1 <- cbind(province = rownames(A1), A1)
-rownames(A1) <- 1:nrow(A1)
-#test sum(A1$A1)=100
-#repeat TR for three tritories
-A1[nrow(A1) + 1,] <- c( "YT",  0.338555269656022)
-A1[nrow(A1) + 1,] <- c( "NT", 0.338555269656022)
-A1[nrow(A1) + 1,] <- c( "NU",0.338555269656022)
-A1$A1 <- as.numeric(A1$A1)
-A1 <- A1 %>% rename(Percentage = A1)
-A1$province[A1$province == 'PEI'] <- 'PE'
-
-
-A2 <- data.frame(A2)
-A2 <- cbind(province = rownames(A2), A2)
-rownames(A2) <- 1:nrow(A2)
-#repeat TR for three tritories
-A2[nrow(A2) + 1,] <- c( "YT", 3.62752706114931)
-A2[nrow(A2) + 1,] <- c( "NT", 3.62752706114931)
-A2[nrow(A2) + 1,] <- c( "NU", 3.62752706114931)
-A2$A2 <- as.numeric(A2$A2)
-A2 <- A2 %>% rename(Percentage = A2)
-A2$province[A2$province == 'PEI'] <- 'PE'
+A1 <- Av.per(CRPer)
+A2 <- Av.per(CRPer)
 
 
 ## canada map
@@ -578,8 +585,6 @@ m1 <- pr_geographic %>%
 
 pr_geographic2 <- mapcan(boundaries = province, type = standard)
 pr_geographic2 <- inner_join(pr_geographic2, A2, by = c("pr_alpha" = "province")) 
-
-
 m2 <- pr_geographic2 %>%
   ggplot(aes(x = long, y = lat, group = group, fill = Percentage)) +
   geom_polygon(show.legend = NA) +
@@ -610,53 +615,58 @@ m1 + m2
 ```
 ### Canada Map (pre and during the pandemic), show average daily over 9 month
 ```{r}
-CC <- ProFinal
-# get the average months March 2019 to Feb 2020 (except June July August 2019) IATA (before Pandemic)
-CC <- subset(CC, !date %in% c(as.Date("2019-01-01"), as.Date("2019-02-01"), as.Date("2020-03-01"), as.Date("2019-06-01"), as.Date("2019-07-01"), as.Date("2019-07-01"), as.Date("2019-08-01")) )
-# Reset row names
-rownames(CC) <- NULL                
+Av.daily <- function(ProFinal){
+  CC <- ProFinal
+  # get the average months March 2019 to Feb 2020 (except June July August 2019) 
+  CC <- subset(CC, !date %in% c(as.Date("2019-01-01"), as.Date("2019-02-01"),
+                                as.Date("2020-03-01"), as.Date("2019-06-01"), 
+                                as.Date("2019-07-01"), as.Date("2019-07-01"), 
+                                as.Date("2019-08-01")) )
+  rownames(CC) <- NULL  # Reset row names              
+  CC1 <- CC[1:9,]    #prepandemic
+  CC2 <- CC[10:18,]  #pandemic
+  # get the mean for both dataframe
+  C1 <- colSums(CC1[2:13])
+  C2 <- colSums(CC2[2:13])
 
-#prepan
-CC1 <- CC[1:9,]
-#pan
-CC2 <- CC[10:18,]
-
-# get the mean for both dataframe
-C1 <- colSums(CC1[2:13])
-C2 <- colSums(CC2[2:13])
-
-C1 <- data.frame(C1)
-C1 <- cbind(province = rownames(C1), C1)
-rownames(C1) <- 1:nrow(C1)
-#repeat TR for three tritories
-C1[nrow(C1) + 1,] <- c( "YT",  2682.378)
-C1[nrow(C1) + 1,] <- c( "NT", 2682.378)
-C1[nrow(C1) + 1,] <- c( "NU",2682.378)
-C1$C1 <- as.numeric(C1$C1)
-C1 <- C1 %>% rename(Daily = C1)
-C1$province[C1$province == 'PEI'] <- 'PE'
-# 273 days pre pandemic 2019
-C1$Daily <- (C1$Daily)/273
-C1$Daily <- ceiling(C1$Daily)
+  C1 <- data.frame(C1)
+  C1 <- cbind(province = rownames(C1), C1)
+  rownames(C1) <- 1:nrow(C1)
+  #repeat TR for three tritories
+  C1[nrow(C1) + 1,] <- c( "YT",  2682.378)
+  C1[nrow(C1) + 1,] <- c( "NT", 2682.378)
+  C1[nrow(C1) + 1,] <- c( "NU",2682.378)
+  C1$C1 <- as.numeric(C1$C1)
+  C1 <- C1 %>% rename(Daily = C1)
+  C1$province[C1$province == 'PEI'] <- 'PE'
+  # 273 days pre pandemic 2019
+  C1$Daily <- (C1$Daily)/273
+  C1$Daily <- ceiling(C1$Daily)
 
 
-C2 <- data.frame(C2)
-C2 <- cbind(province = rownames(C2), C2)
-rownames(C2) <- 1:nrow(C2)
-#repeat TR for three tritories
-C2[nrow(C2) + 1,] <- c( "YT", 5329)
-C2[nrow(C2) + 1,] <- c( "NT", 5329)
-C2[nrow(C2) + 1,] <- c( "NU", 5329)
-C2$C2 <- as.numeric(C2$C2)
-C2 <- C2 %>% rename(Daily = C2)
-C2$province[C2$province == 'PEI'] <- 'PE'
-## 274 days during the pandemic 2020
-C2$Daily <- (C2$Daily)/274
-C2$Daily <- ceiling(C2$Daily)
+  C2 <- data.frame(C2)
+  C2 <- cbind(province = rownames(C2), C2)
+  rownames(C2) <- 1:nrow(C2)
+  #repeat TR for three tritories
+  C2[nrow(C2) + 1,] <- c( "YT", 5329)
+  C2[nrow(C2) + 1,] <- c( "NT", 5329)
+  C2[nrow(C2) + 1,] <- c( "NU", 5329)
+  C2$C2 <- as.numeric(C2$C2)
+  C2 <- C2 %>% rename(Daily = C2)
+  C2$province[C2$province == 'PEI'] <- 'PE'
+  ## 274 days during the pandemic 2020
+  C2$Daily <- (C2$Daily)/274
+  C2$Daily <- ceiling(C2$Daily)
+  
+  #return(C1)
+  return(C2)
+}
+
+C1 <- Av.daily(ProFinal)
+C2 <- Av.daily(ProFinal)
 
 pr_geographic <- mapcan(boundaries = province, type = standard)
 pr_geographic <- inner_join(pr_geographic, C1, by = c("pr_alpha" = "province")) 
-
 df.label <- read.csv("Data/df.label2.csv")
 df.label <- df.label %>% left_join(C1 , by= "province")
 df.label$Daily <- round(df.label$Daily)
@@ -688,17 +698,8 @@ m3 <- pr_geographic %>%
 
 pr_geographic2 <- mapcan(boundaries = province, type = standard)
 pr_geographic2 <- inner_join(pr_geographic2, C2, by = c("pr_alpha" = "province")) 
-
-#C2["diff"] <- C1$Daily - C2$Daily
 df.label <- read.csv("Data/df.label2.csv")
 df.label <- df.label %>% left_join(C2 , by= "province")
-#df.label$diff <- round(df.label$diff)
-# delete Daily and rename 
-#df.label <- select(df.label, c("province", "new.lat", "new.long", "diff" ))
-#df.label$diff <- -(df.label$diff)
-#df.label <- df.label %>% rename(  Daily = diff)
-
-
 
 m4 <- pr_geographic2 %>%
   ggplot(aes(x = long, y = lat, group = group, fill = Daily)) +
@@ -721,7 +722,6 @@ m4 <- pr_geographic2 %>%
   ggtitle("During the pandemic")
 
 m3 + m4 
-#ggsave("Figure/map2.png", width = 12, , height = 8)
 ```
 
 
@@ -745,32 +745,35 @@ ggsave("Figure/FigureApp2.png", width = 10, , height = 6, dpi =500)
 
 ## get Daily total volume (during the pandemic) for empi model (rest of manuscript)
 ```{r}
-Daily1 <- total.pand(TDF, FC, FCEXCrew)
-Daily1 <- select(Daily1, c("date", "TDF_CA", "TDF_Int", "FC", "crew_CA", "Exp_CA" ))
-#Take exemption of TDF for INT and CA
-Daily1["exclINT"] <- Daily1$FC - Daily1$TDF_Int
-Daily1["exclCA"] <- Daily1$crew_CA + Daily1$Exp_CA
-
-perCAPan <- per12 %>% filter(per12$date >= as.Date("2020-09-01"))
-perCAPan <- select(perCAPan, -c(nonUS, US))
-
-## divided exemption Canada based perCAPan between provinces per month
-Dailypro <- perCAPan
-for (i in 1:nrow(Dailypro)){
-  for (j in 2:length(Dailypro)){
-    Dailypro[i,j] <- (Daily1$exclCA[i])*(perCAPan[i,j]/100)
+daily.TV <- function(){
+  Daily1 <- total.pand(TDF, FC, FCEXCrew)
+  Daily1 <- select(Daily1, c("date", "TDF_CA", "TDF_Int", "FC", "crew_CA", "Exp_CA" ))
+  #Find exemption of TDF for INT and CA
+  Daily1["exclINT"] <- Daily1$FC - Daily1$TDF_Int
+  Daily1["exclCA"] <- Daily1$crew_CA + Daily1$Exp_CA
+  #Share of each province during the pandeic
+  perCAPan <- per12 %>% filter(per12$date >= as.Date("2020-09-01"))
+  perCAPan <- select(perCAPan, -c(nonUS, US))
+  ## divid exemption Canada based perCAPan between provinces per month
+  Dailypro <- perCAPan
+  for (i in 1:nrow(Dailypro)){
+    for (j in 2:length(Dailypro)){
+      Dailypro[i,j] <- (Daily1$exclCA[i])*(perCAPan[i,j]/100) }
   }
+  ## make a dataframe of exemption Travel volume (who did not fill TDF form) for province and INT
+  Dailypro <- Dailypro %>% left_join(select(Daily1, c(date, exclINT)), by ="date")
+  # make data exemption daily 273
+  Dailypro["Ym"] <- format(as.Date(Dailypro$date), "%Y-%m")
+  Daily2 <- Dailypro %>% select(date) %>% 
+    complete(date=  seq.Date(min(date), max(date)+30, by="day"),) %>%
+    mutate(Ym=paste(year(date),str_pad(month(date), 2, pad = "0"),sep = "-"))
+  Daily2 <- Daily2 %>% left_join(Dailypro, by="Ym")
+  
+  return(Daily2)
 }
 
-## make a dataframe of exemption Travel volume (who did not fill TDF form) for province and INT
-Dailypro <- Dailypro %>% left_join(select(Daily1, c(date, exclINT)), by ="date")
-# make data exemption daily 273
-Dailypro["Ym"] <- format(as.Date(Dailypro$date), "%Y-%m")
-Daily2 <- Dailypro %>% select(date) %>% 
-   complete(date=  seq.Date(min(date), max(date)+30, by="day"),) %>% 
-   mutate(Ym=paste(year(date),str_pad(month(date), 2, pad = "0"),sep = "-"))
+Daily2 <- daily.TV()
 
-Daily2 <- Daily2 %>% left_join(Dailypro, by="Ym")
 # divide number for days in a month
 v_daily <- function(yr_month, v_monthly) {
    # Convert current month to current date
@@ -795,7 +798,7 @@ Daily2 <- select(Daily2, -c("date.y", "Ym")) %>% rename(date = date.x)
 Daily2 <- Daily2 %>% rename(INT= exclINT)
 
 ## add daily exemption into raw TDF data source
-TDF <- select(TDF , -c("US", "nonUS", "ALLCANotNL")) %>% rename(INT = AllFR )
+TDF <- select(TDF, -c("US", "nonUS","ALLCANotNL")) %>% rename(INT = AllFR)
 Tra_daily2 <- TDF
 origin <- c("ON","QC","MB", "NB", "AB", "NS", "BC", "SK", "PEI", "TR","INT")
 for (i in 1:length(origin)){
@@ -807,7 +810,7 @@ for (i in 1:length(origin)){
 # round data 
 Tra_daily2 <- data.frame(lapply(Tra_daily2, function(x) if(is.numeric(x)) floor(x) else x))
 
-write.csv(Tra_daily2, " TotalTraVolume.csv")
+#write.csv(Tra_daily2, " TotalTraVolume.csv")
 ```
 
 
