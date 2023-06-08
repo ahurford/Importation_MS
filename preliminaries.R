@@ -19,6 +19,6 @@ library(caret)  # for calculate R2
 #library(pscl)  # for calculate McFadden's R-squared for model
 
 ## Color palette
-cpalete = c( "#999999", "#E69F00", '#336699',"#99FF33", "#CC6699", "#cc0000", "#414487FF" ,"#35B779FF") #"#31688EFF"
+cpalete = c( "#999999", "#E69F00", '#336699',"#99FF33", "#CC6699", "#cc0000", "#414487FF" ,"#35B779FF") 
 
 
