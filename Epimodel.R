@@ -12,12 +12,9 @@ source("getcases.pro.R") # output: Case, Cum and pop
 source("getsero-CF.R") # output: CF
 
 # daily travel volume calculated in Volume-focusOrigin.R
-Volume <- read.csv("Data/TraVolData/Totalvolume.csv")
+Volume <- read.csv("Data/TraVolData/TotalTraVolume.csv")
 Volume$date <- as.Date(as.character(Volume$date), format = "%Y-%m-%d")
-# round data 
-Volume <- data.frame(lapply(Volume, function(x) if(is.numeric(x)) floor(x) else x))
 Volume <- Volume %>% rename(US = INT)
-
 
 #break down daily volume to regular travel vs rotational workers (200 daily-rw)
 rw_Volume <- Volume %>% mutate(AB = 114, ON= 30, BC= 8 , SK = 4, MB = 2, QC = 4, 
@@ -40,15 +37,8 @@ for (i in 1:length(origins)){
 }
 
 ## For validate purpose--Reported travel-related cases in NL
-Travel_case <- read.csv("Data/reported travel-related-cases.csv") %>% rename(date = REPORTED_DATE )
+Travel_case <- read.csv("Data/Travel.Case.csv") 
 Travel_case$date <- as.Date(Travel_case$date, format = "%Y-%m-%d") 
-Travel_case <- Travel_case %>% filter(Travel_case$date >= as.Date("2020-09-01") & Travel_case$date <= as.Date("2021-05-31") )
-#consider unknown as not Travel-related infected (unknown source was not alot)
-Travel_case["Tot.NotTravel"] <-rowSums(Travel_case[, c("Tot.NoTR", "Tot.Unknown")])
-Travel_case <- select(Travel_case,-c("Tot.NoTR", "Tot.Unknown"))
-#Total cases in NL
-Travel_case <- dplyr::mutate(Travel_case, "Tot.Tra" = rowSums((Travel_case[,2:3]), na.rm = TRUE))
-Travel_case <- select(Travel_case, c(date, Tot.Int, Tot.Dom, Tot.Tra))
 
 ##-------------3. Estimate risk importation -----------------
 # Note :## note a=0..13 need to read probsym and lambda =1:14 
