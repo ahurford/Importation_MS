@@ -60,7 +60,7 @@ Cum["TR"] <- rowSums(Cum[,c("NU", "NWT" ,"YU" )])   # sum territories as one reg
 Cum <- select(Cum , -c("NU", "NWT" ,"YU"))          #remove extra (territories) 
 Cum <- select(Cum , c("date", "AB", "BC", "MB", "NB", "NS", "ON", "PEI", "QC", "SK", "TR")) # reorder columns
 
-####################### Fix missing values no data on Christmas and weekends 
+####################### Fix missing values no data on Christmas and weekends(just AB, BC before October) 
 #MB
 Case$MB[Case$date == as.Date("2020-12-25")] <- round(Case$MB[Case$date == as.Date("2020-12-27")]/3)
 Case$MB[Case$date == as.Date("2020-12-26")] <- round(Case$MB[Case$date == as.Date("2020-12-27")]/3)
