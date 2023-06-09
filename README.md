@@ -5,4 +5,4 @@ The R code and data are a continuation of the results described in the paper:
 [medRxiv](https://www.google.com)
 
 
-The travel deceleration form data is not public, so the data file 'ExtractTDF.csv' required to run the 'Volume-FocusOrigin.Rmd' script has not been shared here. Please contact the corresponding authors (zahram@uoguelph.ca) or (ahurford@mun.ca) to obtain access to this file.
+The travel deceleration form data is not public, so the data file 'ExtractTDF.csv' required to run the 'Volume-FocusOrigin.Rmd' script has not been shared here. Please contact zahram@uoguelph.ca or ahurford@mun.ca (corresponding author) to obtain access to this file.
