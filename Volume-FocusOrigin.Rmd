@@ -181,7 +181,7 @@ p2 <- ggplot() +
   geom_point(data=df.plt, aes(x=date, y= Tot.Int.x, color= 'INT')) +
   geom_line( data=df.plt, aes(x=date, y=Tot.Int.y, col='INT'), size=1) +
   
-  labs(x="", y="\n Infected travelers (daily)", title="Travel-related cases (NLCHI)") +
+  labs(x="", y="\n Infected travelers (daily)", title="Travel-related cases (NLHS)") +
   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
   scale_color_manual(values = colLeg) +
   guides(color = guide_legend(title = "Departure Origin"), size= rel(1.3))+
