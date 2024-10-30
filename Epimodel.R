@@ -521,8 +521,6 @@ bestmodel.CA <- TVInfPr$fitted.values
 dfplt <- df.modelfull
 dfplt["bestInt"] <- bestmodel.Int[6:273]   
 dfplt["bestDom"] <- bestmodel.CA[6:273]  
-#there are couple negative in Dom
-dfplt$bestDom[dfplt$bestDom < 0 ] <- 0
 
 print(AIC.CA)
 print(AIC.INT)

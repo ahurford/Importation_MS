@@ -7,6 +7,16 @@ source("Epimodel.R")
 ## IMP : output epi model Canadian provinces, rotational workers, regular travelers, INT
 ## dfplot : included best model, epi model and reported CA and INT
 
+##----- Make 50% prediction intervals assuming no parameter estimation uncertainty
+dfplt["Est.Dom.low"] =qpois(0.025, dfplt$Est.Dom)
+dfplt["Est.Dom.high"] =qpois(0.975, dfplt$Est.Dom)
+dfplt["Est.Int.low"] =qpois(0.025, dfplt$Est.Int)
+dfplt["Est.Int.high"] =qpois(0.975, dfplt$Est.Int)
+dfplt["bestDom.low"] =qpois(0.025, dfplt$bestDom)
+dfplt["bestDom.high"] =qpois(0.975, dfplt$bestDom)
+dfplt["bestInt.low"] =qpois(0.025, dfplt$bestInt)
+dfplt["bestInt.high"] =qpois(0.975, dfplt$bestInt)
+
 ###---------- make monthly version dataframe ------------
 dfplt$year  <- strftime(dfplt$date, "%Y")
 dfplt$month <- strftime(dfplt$date, "%m")
@@ -91,66 +101,92 @@ m2 <- ggplot() +
 
 ### 3. comparison models plots
 ### 3.1. daily International
-df1.Int <- select(dfplt, c(date, bestInt, Est.Int))
-df1.Int <- melt(df1.Int, id=c("date"))
+df1.Int <- select(dfplt, c(date, bestInt, Est.Int, Est.Int.low, Est.Int.high,bestInt.low, bestInt.high))
 
-plt1 <- c( "Best model"=cpalete[8], "Mechanisitic model" = cpalete[7],"Data" = cpalete[1])
-p1 <- ggplot() +
-  geom_line(data=dfplt, aes(x=date, y= Rep.Int, color='Data'), size=1) +
-  geom_bar(data=df1.Int, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(), alpha=.8 ) +
+p1mech <- ggplot() + 
+  geom_ribbon(data=df1.Int, aes(x=date, ymin=Est.Int.low, ymax=Est.Int.high), fill=cpalete[1],alpha = 0.3)+
+  geom_line(data=df1.Int, aes(x=date, y=Est.Int),color=cpalete[1], size = 1.5) +
+  geom_point(data=dfplt, aes(x=date, y= Rep.Int),color='black', size=1.5)+
   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-  labs(x="", y="\n Reported travel-related cases (daily)",
-       title="Comparison of model predictions to reported travel-related cases \n International") +
-  scale_fill_manual(name = "", labels = c( "Best model", "Mechanistic model","Data"), values = c( cpalete[8],cpalete[7], cpalete[1])) +
-  scale_color_manual(values = plt1) +
-  guides(color = guide_legend(title = ""), size=rel(1.4)) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-                          legend.position="bottom",
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.3), face="bold"),
-                          axis.title = element_text(size=rel(1.1)),
-                          axis.text.y = element_text(size=rel(1.2)))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16))+
+  labs(x="", y="\n Travel-related cases (daily)",
+       title="International: Mechanistic model") +
+  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(2)),
+                          plot.title=element_text(size=rel(2), face="bold"),
+                          axis.title = element_text(size=rel(2)),
+                          axis.text.y = element_text(size=rel(2)))
+
+p1best <- ggplot() + 
+  geom_ribbon(data=df1.Int, aes(x=date, ymin=bestInt.low, ymax=bestInt.high), fill=cpalete[1],alpha = 0.3)+
+  geom_line(data=df1.Int, aes(x=date, y=bestInt),color=cpalete[1],size=1.5) +
+  geom_point(data=dfplt, aes(x=date, y= Rep.Int),color='black', size=1.5)+
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %y")  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16))+
+  labs(x="", y="\n Travel-related cases (daily)",
+       title="International: Best model") +
+  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(2)),
+                          plot.title=element_text(size=rel(2), face="bold"),
+                          axis.title = element_text(size=rel(2)),
+                          axis.text.y = element_text(size=rel(2)))
+
 
 
 #### 3.2. daily Canada
-df1.Dom <- select(dfplt, c(date, bestDom, Est.Dom))
-df1.Dom <- melt(df1.Dom, id=c("date"))
+df1.Dom <- select(dfplt, c(date, bestDom, Est.Dom, bestDom.low, bestDom.high, Est.Dom.low, Est.Dom.high))
 
-plt2 <- c( "Best model"=cpalete[8],"Mechanistic model" = cpalete[7], "Data" = cpalete[2])
-p2 <- ggplot() +
-  geom_line( data=dfplt, aes(x=date, y= Rep.Dom, color='Data'), size=1) +
-  geom_bar(data=df1.Dom, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(), alpha=.8) +
+p2mech <- ggplot() + 
+  geom_ribbon(data=df1.Dom, aes(x=date, ymin=Est.Dom.low, ymax=Est.Dom.high), fill=cpalete[2],alpha = 0.3)+
+  geom_line(data=df1.Dom, aes(x=date, y=Est.Dom),color=cpalete[2], size=1.5) +
+  geom_point(data=dfplt, aes(x=date, y= Rep.Dom),color='black', size=1.5)+
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %y")  +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16))+
+  labs(x="", y="\n Travel-related cases (daily)",
+       title="Canada: Mechanistic model") +
+  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(2)),
+                          plot.title=element_text(size=rel(2), face="bold"),
+                          axis.title = element_text(size=rel(2)),
+                          axis.text.y = element_text(size=rel(2)))
+
+p2best <- ggplot() + 
+  geom_ribbon(data=df1.Dom, aes(x=date, ymin=bestDom.low, ymax=bestDom.high), fill=cpalete[2],alpha = 0.3)+
+  geom_line(data=df1.Dom, aes(x=date, y=bestDom),color=cpalete[2],size=1.5) +
+  geom_point(data=dfplt, aes(x=date, y= Rep.Dom),color='black', size=1.5)+
   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
-  labs(x="", y="\n Reported travel-related cases (daily)",
-       title="Comparison of model predictions to reported travel-related cases \n Canada") +
-  scale_fill_manual(name = "", labels = c( "Best-model", "Mechanistic-model","Reported"), values = c( cpalete[8],cpalete[7], cpalete[2])) +
-  scale_color_manual(values = plt2) +
-  guides(color = guide_legend(title = ""), size=rel(1.4)) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
-                          legend.position="bottom",
-                          legend.text=element_text(size=rel(1.2)),
-                          plot.title=element_text(size=rel(1.3), face="bold"),
-                          axis.title = element_text(size=rel(1.1)),
-                          axis.text.y = element_text(size=rel(1.2)))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 16))+
+  labs(x="", y="\n Travel-related cases (daily)",
+       title="Canada: Best model") +
+  theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(2)),
+                          plot.title=element_text(size=rel(2), face="bold"),
+                          axis.title = element_text(size=rel(2)),
+                          axis.text.y = element_text(size=rel(2)))
+
 
 
 ### 3.3. monthly International
 df2.Int <- select(dfplt.month, c(date, bInt, INT))
-df2.Int <- melt(df2.Int, id=c("date"))
+#df2.Int <- melt(df2.Int, id=c("date"))
+df2.Int["bInt.low"] = qpois(0.025, df2.Int$bInt)
+df2.Int["bInt.high"] = qpois(0.975, df2.Int$bInt)
+df2.Int["INT.low"] = qpois(0.025, df2.Int$INT)
+df2.Int["INT.high"] = qpois(0.975, df2.Int$INT)
 
 p3 <- ggplot()+
-  geom_bar(data=df2.Int, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8) +
-  geom_line(data= dfplt.month, aes(x=date, y=RInt),stat="identity",color=cpalete[1], size=1) +
-  geom_point(data= dfplt.month,  aes(x=date, y=RInt, color="Data"), size =2.8) +
+  geom_ribbon(data=df2.Int, aes(x=date, ymin=bInt.low, ymax=bInt.high, fill = cpalete[8]), alpha = 0.3)+
+  geom_ribbon(data=df2.Int, aes(x=date, ymin=INT.low, ymax=INT.high, fill = cpalete[1]), alpha = 0.3)+
+  geom_line(data= df2.Int, aes(x=date, y=bInt), size=0.5, color=cpalete[8])+
+  geom_line(data= df2.Int, aes(x=date, y=INT), size=0.5, color=cpalete[1])+
+  geom_point(data= df2.Int, aes(x=date, y=bInt), size=1, color=cpalete[8])+
+  geom_point(data= df2.Int, aes(x=date, y=INT), size=1, color=cpalete[1])+
+  #geom_bar(data=df2.Int, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8) +
+  #geom_line(data= dfplt.month, aes(x=date, y=RInt),stat="identity",color="black", size=0) +
+  geom_point(data= dfplt.month,  aes(x=date, y=RInt),color="black", size =1.5) +
   labs(x="", y="\n Reported travel-related cases (monthly)", title="International" ) +
-  ylim(0, 30) +
+  ylim(0, 20) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
   labs(x="", y="\n Reported travel-related cases (monthly)",
        title="Comparison of model predictions to reported travel-related cases \n International") +
-  scale_fill_manual(name = "", labels = c("Best model","Mechanistic model", "Data"), values = c( cpalete[8],cpalete[7], cpalete[1])) +
+  scale_fill_manual(name = "", labels = c("Best model","Mechanistic model", "Data"), values = c( cpalete[8],cpalete[1], "black")) +
   scale_color_manual(values = plt1)+
   guides(color = guide_legend(title = ""), size=rel(1.4)) +
   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
@@ -163,19 +199,29 @@ p3 <- ggplot()+
 
 # 3.4. monthly Canada
 df2.Dom <- select(dfplt.month, c(date, bCA, CA))
-df2.Dom <- melt(df2.Dom, id=c("date"))
+df2.Dom["bCA.low"] = qpois(0.025, df2.Dom$bCA)
+df2.Dom["bCA.high"] = qpois(0.975, df2.Dom$bCA)
+df2.Dom["CA.low"] = qpois(0.025, df2.Dom$CA)
+df2.Dom["CA.high"] = qpois(0.975, df2.Dom$CA)
+
 
 p4 <- ggplot() +
-  geom_bar(data=df2.Dom, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8 ) +
-  geom_line(data= dfplt.month, aes(x=date, y= RCA),stat="identity",color=cpalete[2], size=1) +
-  geom_point(data= dfplt.month,  aes(x=date, y= RCA, color="Data"), size =2.8) +
+  geom_ribbon(data=df2.Dom, aes(x=date, ymin=bCA.low, ymax=bCA.high, fill = cpalete[8]), alpha = 0.3)+
+  geom_ribbon(data=df2.Dom, aes(x=date, ymin=CA.low, ymax=CA.high, fill = cpalete[2]), alpha = 0.3)+
+  geom_line(data= df2.Dom, aes(x=date, y=bCA), size=0.5, color=cpalete[8])+
+  geom_line(data= df2.Dom, aes(x=date, y=CA), size=0.5, color=cpalete[2])+
+  geom_point(data= df2.Dom, aes(x=date, y=bCA), size=1, color=cpalete[8])+
+  geom_point(data= df2.Dom, aes(x=date, y=CA), size=1, color=cpalete[2])+
+  #geom_bar(data=df2.Dom, aes(x=date, y=value, fill=variable), stat="identity", position=position_dodge(),alpha=.8 ) +
+  #geom_line(data= dfplt.month, aes(x=date, y= RCA),stat="identity",color="black", size=1) +
+  geom_point(data= dfplt.month,  aes(x=date, y= RCA),color="black", size =1.5) +
   ylim(0, 120) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b %y") +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 11))+
   labs(x="", y="\n Reported travel-related cases (monthly)",
        title="Comparison of model predictions to reported travel-related cases \n Canada") +
   scale_color_manual(values = plt2)+
-  scale_fill_manual(name = "", labels = c( "Best model","Mechanistic model", "Data"), values = c( cpalete[8],cpalete[7], cpalete[2])) +
+  scale_fill_manual(name = "", labels = c( "Best model","Mechanistic model", "Data"), values = c( cpalete[8],cpalete[2], "black")) +
   guides(color = guide_legend(title = ""), size=rel(1.4)) +
   theme_classic() + theme(axis.text.x = element_text(angle = 90, size=rel(1.2)),
                           legend.position="bottom",
@@ -186,11 +232,12 @@ p4 <- ggplot() +
 
 
 
-p2+p1 + plot_annotation(tag_levels = 'A')
-ggsave("Figure/figureApp1.png", width = 15, , height = 6, dpi =500)
+m2
+ggsave("Figure/figureApp1.png", width = 5, , height = 5, dpi =500)
 
 
-(m1+m2)/(p4+p3) + plot_annotation(tag_levels = 'A')
-ggsave("Figure/Figure3.png", width = 15, , height = 10, dpi =500)
+(p2best+p2mech)/(p1best+p1mech) + plot_annotation(tag_levels = 'A') & 
+  theme(plot.tag = element_text(size = 20))
+ggsave("Figure/Figure3.png", width = 18, , height = 12, dpi =500)
 
 
